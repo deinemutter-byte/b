@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Apple-like 3D Pairing Pattern (Solid)</title>
+    <style> body { margin: 0; overflow: hidden; background: black; } </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // 1. Setup Scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000); // Black background
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Create Dense, Solid Particles
+        const particles = 8000; // Mehr Partikel = dichteres Muster
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particles * 3);
+        const colors = new Float32Array(particles * 3);
+
+        // Farbpalette (Apple-Blau/Weiß)
+        const colorPalette = [
+            [0.3, 0.5, 1.0],  // Blau
+            [0.5, 0.7, 1.0],  // Hellblau
+            [0.8, 0.9, 1.0]   // Weiß mit Blaustich
+        ];
+
+        for (let i = 0; i < particles; i++) {
+            // Positionen in einer Kugel
+            const radius = 2.5 * Math.random();
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i * 3 + 2] = radius * Math.cos(phi);
+
+            // Zufällige Farbe aus der Palette
+            const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            colors[i * 3] = color[0];
+            colors[i * 3 + 1] = color[1];
+            colors[i * 3 + 2] = color[2];
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // 3. Material (weniger transparent, mit "Glow")
+        const material = new THREE.PointsMaterial({
+            size: 0.1,           // Größere Partikel
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,        // Fast undurchsichtig
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: false
+        });
+
+        const particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        // 4. Kamera & Animation
+        camera.position.z = 4;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Sanfte Rotation + Pulsieren
+            particleSystem.rotation.x += 0.003;
+            particleSystem.rotation.y += 0.005;
+            
+            // Partikel leicht bewegen (fließender Effekt)
+            const positions = particleSystem.geometry.attributes.position.array;
+            for (let i = 0; i < particles; i++) {
+                positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * 0.005;
+                positions[i * 3 + 1] += Math.cos(Date.now() * 0.001 + i) * 0.005;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Responsive
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
